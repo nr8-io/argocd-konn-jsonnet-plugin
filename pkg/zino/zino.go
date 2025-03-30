@@ -82,15 +82,15 @@ func ParseLevel(level string) (zerolog.Level, error) {
 	return zerolog.InfoLevel, nil
 }
 
-type LevelHook struct {
-	LevelKey string
-}
+type LevelHook struct{}
 
+// Add the level as an integer instead of a string to match pino log output
 func (h LevelHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
 	e.Int("level", ConvertLevel(level))
 }
 
-func createLogger(writer io.Writer, level zerolog.Level, disableTimeMs bool) *zerolog.Logger {
+// Create a new logger with level removed and default values to match standard pino outpu
+func NewLogger(writer io.Writer, level zerolog.Level, disableTimeMs bool) *zerolog.Logger {
 	// global default configuration
 	zerolog.MessageFieldName = "msg"
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
@@ -104,7 +104,8 @@ func createLogger(writer io.Writer, level zerolog.Level, disableTimeMs bool) *ze
 	// ignore hostname in case of error
 	hostname, _ := os.Hostname()
 
-	log := zerolog.New(writer).
+	log := zerolog.
+		New(writer).
 		Hook(LevelHook{}).
 		With().
 		Timestamp().
@@ -135,11 +136,11 @@ func Init(options InitOptions) (*zerolog.Logger, error) {
 		return nil, err
 	}
 
-	return createLogger(logWriter, logLevel, options.DisableTimeMs), nil
+	return NewLogger(logWriter, logLevel, options.DisableTimeMs), nil
 }
 
 // InitDefault Creates a zerolog logger with custom default properties
 // and custom style using predefined writer and log level
 func InitDefault() *zerolog.Logger {
-	return createLogger(os.Stdout, zerolog.InfoLevel, false)
+	return NewLogger(os.Stdout, zerolog.InfoLevel, false)
 }
