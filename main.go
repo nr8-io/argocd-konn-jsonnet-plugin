@@ -20,10 +20,9 @@ func main() {
 		level = "debug"
 	}
 
-	log, err := zino.Init(zino.InitOptions{Level: level})
+	log, err := zino.NewLogger(level)
 	if err != nil {
 		panic(err)
-
 	}
 
 	// create new konn jsonnet plugin with logger

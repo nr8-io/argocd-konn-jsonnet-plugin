@@ -49,7 +49,7 @@ func (g *GitSync) Configure(options ...GitSyncOption) error {
 
 	// needs logger
 	if g.log == nil {
-		log, err := zino.Init(zino.InitOptions{Level: "debug"})
+		log, err := zino.NewLogger("debug")
 		if err != nil {
 			return err
 		}

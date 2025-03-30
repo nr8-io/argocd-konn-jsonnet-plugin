@@ -44,7 +44,7 @@ func (p *KonnJsonnetPlugin) Configure(options ...KonnJsonnetPluginOption) error 
 
 	// set default logger if not set
 	if p.log == nil {
-		log, err := zino.Init(zino.InitOptions{Level: "debug"})
+		log, err := zino.NewLogger("debug")
 		if err != nil {
 			return err
 		}
