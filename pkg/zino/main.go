@@ -27,20 +27,61 @@ const (
 
 // InitOptions are the possible options that can be used to initialize the logger
 type Logger struct {
+	// reference to the zerolog logger
+	logger *zerolog.Logger
+
 	// Zino logger options
 	Level     string
 	ZeroLevel zerolog.Level
 	Writer    io.Writer
 }
 
+func New(options ...LoggerOption) (*Logger, error) {
+	l := &Logger{}
+
+	err := l.Configure(options...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to configure logger: %w", err)
+	}
+
+	return l, nil
+}
+
 // Init Creates a zerolog logger with custom default properties and custom style
 func NewLogger(level string, options ...LoggerOption) (*zerolog.Logger, error) {
 	l := &Logger{
-		Level:  level,
-		Writer: nil,
+		Level: level,
 	}
 
-	l.Configure(options...)
+	err := l.Configure(options...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to configure logger: %w", err)
+	}
+
+	return l.logger, nil
+}
+
+func (l *Logger) Configure(options ...LoggerOption) error {
+	for _, option := range options {
+		option(l)
+	}
+
+	if l.Level == "" && l.ZeroLevel < -1 {
+		l.Level = "info"
+	}
+
+	if l.Writer == nil {
+		l.Writer = os.Stdout
+	}
+
+	// if ZeroLevel is aa number
+	if l.ZeroLevel < -1 {
+		logLevel, err := ParseLevel(l.Level)
+		if err != nil {
+			return err
+		}
+		l.ZeroLevel = logLevel
+	}
 
 	zerolog.LevelFieldName = ""      // remove default level field to replace it with pino int level
 	zerolog.MessageFieldName = "msg" // replace default message field with pino msg
@@ -50,7 +91,8 @@ func NewLogger(level string, options ...LoggerOption) (*zerolog.Logger, error) {
 	// ignore hostname in case of error
 	hostname, _ := os.Hostname()
 
-	log := zerolog.
+	// create a new zerolog logger
+	logger := zerolog.
 		New(l.Writer).
 		Hook(PinoLevelHook{}).
 		With().
@@ -60,31 +102,20 @@ func NewLogger(level string, options ...LoggerOption) (*zerolog.Logger, error) {
 		Logger().
 		Level(l.ZeroLevel)
 
-	return &log, nil
-}
-
-func (l *Logger) Configure(options ...LoggerOption) error {
-	for _, option := range options {
-		option(l)
-	}
-
-	if l.Level == "" && l.ZeroLevel == 0 {
-		l.Level = "info"
-	}
-
-	if l.Writer == nil {
-		l.Writer = os.Stdout
-	}
-
-	if l.ZeroLevel == 0 {
-		logLevel, err := ParseLevel(l.Level)
-		if err != nil {
-			return err
-		}
-		l.ZeroLevel = logLevel
-	}
+	l.logger = &logger
 
 	return nil
+}
+
+func (l *Logger) Logger() (*zerolog.Logger, error) {
+	if l.logger == nil {
+		err := l.Configure()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return l.logger, nil
 }
 
 // ParseLevel Parse a string name of the log level and return the corresponding zerolog level
