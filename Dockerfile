@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.24-bookworm AS builder
+FROM golang:1.24-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -17,14 +17,25 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o argocd-konn-jsonnet-plugin
 RUN go install github.com/google/go-jsonnet/cmd/jsonnet@latest
 
 # Final stage
-FROM debian:bookworm-slim
+FROM alpine:latest
 
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache git
 
 # Copy binaries from builder stage
 COPY --from=builder /app/argocd-konn-jsonnet-plugin /usr/local/bin/
 COPY --from=builder /go/bin/jsonnet /usr/local/bin/
 
-# Set the binary as entrypoint
-ENTRYPOINT ["argocd-konn-jsonnet-plugin"]
+# Define group and user IDs for consistency
+ENV GROUP_ID=999
+ENV USER_ID=999
+
+# Group and user needed for argocd-cmp-server
+RUN grep 999 /etc/group | awk -F: '{print $1}' | xargs delgroup || true && \
+    addgroup -g 999 argo && \
+    adduser -D -u 999 -G argo argo
+
+# set the default user
+USER argo
+
+# argocd-cmp-server as entrypoint
+ENTRYPOINT ["/var/run/argocd/argocd-cmp-servers"]
