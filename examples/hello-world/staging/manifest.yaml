@@ -15,10 +15,13 @@ spec:
       parameters:
         - name: path
           string: ./staging
+        - name: tlas
+          array:
+            - namespace=hello-world-stg
         - name: libs
           array:
             - https://github.com/nr8-io/konn.git
             - https://github.com/nr8-io/k8s-libsonnet.git
   destination:
     server: https://kubernetes.default.svc
-    namespace: hello-world
+    namespace: hello-world-stg

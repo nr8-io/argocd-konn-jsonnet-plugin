@@ -8,6 +8,7 @@ k.app(
   ],
   defaults={
     name: 'hello-world',
+    namespace: 'hello-world',
   },
   profiles={
     staging: {

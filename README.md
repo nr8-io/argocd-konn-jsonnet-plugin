@@ -44,14 +44,14 @@ spec:
             - app=hello-world-stg
         - name: tlas
           array:
-            - ns=hello-world
+            - namespace=hello-world-stg
         - name: libs
           array:
             - https://github.com/nr8-io/konn.git
             - https://github.com/nr8-io/k8s-libsonnet.git
   destination:
     server: https://kubernetes.default.svc
-    namespace: konn-jsonnet
+    namespace: hello-world-stg
 ```
 
 ### Parameters
@@ -70,6 +70,8 @@ spec:
 - Defaults to './application.jsonnet' unless otherwise specified.
 
 #### extVars - jsonnet external variables (optional)
+
+extVars are supported but recommended, consider using tlas instead.
 
 - External variables to pass to jsonnet. This is a list of key=value pairs
   passed as --ext-str.

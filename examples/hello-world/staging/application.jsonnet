@@ -1,4 +1,11 @@
 local app = import '../application/main.libsonnet';
 local k = import 'konn/main.libsonnet';
 
-app.init({}, profile='staging')
+function(namespace='hello-world') (
+  app.init(
+    {
+      namespace: namespace,
+    },
+    profile='staging'
+  )
+)
