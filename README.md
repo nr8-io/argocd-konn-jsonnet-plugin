@@ -19,6 +19,13 @@ kubectl patch -n argocd deployment/argocd-repo-server --patch-file=config/argocd
 ```
 
 ## Usage
+
+Create your ArgoCD application using the konn-jsonnet plugin in the source, the path should include all of the jsonnet files required to render the app from the entrypoint.
+
+See [examples/hello-world](https://github.com/nr8-io/argocd-konn-jsonnet-plugin/tree/main/examples/hello-world) for an example app that uses [konn](https://github.com/nr8-io/konn).
+
+NOTE: extVars is only given as an example, but is not recommend and not actually used by the hello-world example.
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -71,7 +78,7 @@ spec:
 
 #### extVars - jsonnet external variables (optional)
 
-extVars are supported but recommended, consider using tlas instead.
+NOTE: extVars are supported but recommended, consider using tlas instead.
 
 - External variables to pass to jsonnet. This is a list of key=value pairs
   passed as --ext-str.
