@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello-world
+  annotations:
+    argocd.argoproj.io/manifest-generate-paths: "."
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nr8-io/argocd-konn-jsonnet-plugin.git
+    path: examples/hello-world
+    targetRevision: HEAD
+    plugin:
+      name: konn-jsonnet
+      parameters:
+        - name: path
+          string: ./staging
+        - name: libs
+          array:
+            - https://github.com/nr8-io/konn.git
+            - https://github.com/nr8-io/k8s-libsonnet.git
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: hello-world

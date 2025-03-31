@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-repo-server
+  namespace: argocd
+spec:
+  template:
+    spec:
+      containers:
+        - name: konn-jsonnet-plugin
+          command: [/var/run/argocd/argocd-cmp-server]
+          image: eu.gcr.io/topvine-co/argocd-konn-jsonnet-plugin
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: /app/config/ssh
+              name: ssh-known-hosts
+            - mountPath: /var/run/argocd
+              name: var-files
+            - mountPath: /home/argocd/cmp-server/plugins
+              name: plugins
+            - mountPath: /tmp
+              name: konn-jsonnet-plugin-tmp
+            - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+              subPath: plugin.yaml
+              name: konn-jsonnet-plugin-cm
+      volumes:
+        - configMap:
+            name: konn-jsonnet-plugin-cm
+          name: konn-jsonnet-plugin-cm
+        - emptyDir: {}
+          name: konn-jsonnet-plugin-tmp

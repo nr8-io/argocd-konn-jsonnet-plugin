@@ -31,11 +31,11 @@ ENV USER_ID=999
 
 # Group and user needed for argocd-cmp-server
 RUN grep 999 /etc/group | awk -F: '{print $1}' | xargs delgroup || true && \
-    addgroup -g 999 argo && \
-    adduser -D -u 999 -G argo argo
+    addgroup -g 999 argocd && \
+    adduser -D -u 999 -G argocd argocd
 
 # set the default user
-USER argo
+USER argocd
 
 # argocd-cmp-server as entrypoint
 ENTRYPOINT ["/var/run/argocd/argocd-cmp-servers"]

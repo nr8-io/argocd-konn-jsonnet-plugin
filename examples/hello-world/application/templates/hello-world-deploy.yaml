@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "%(name)s"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: "%(name)s"
+    spec:
+      containers:
+        - name: nginx
+          image: nginxinc/nginx-unprivileged:latest
+          ports:
+            - containerPort: 8080

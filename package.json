@@ -1,0 +1,8 @@
+{
+	"name": "argocd-konn-jsonnet-plugin",
+	"description": "ArgoCD [config management plugin](https://argo-cd.readthedocs.io/en/stable/operator-manual/config-management-plugins/) to extend the basic functionality of the jsonnet plugin intended for use with [konn](https://github.com/nr8-io/konn) to support external libraries by using git repos.",
+	"devDependencies": {
+		"k8s-libsonnet": "github:nr8-io/k8s-libsonnet",
+		"konn": "github:nr8-io/konn#HEAD"
+	}
+}

@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: konn-jsonnet-plugin-cm
+  namespace: argocd
+data:
+  plugin.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: konn-jsonnet
+    spec:
+      init:
+        command: [/usr/local/bin/argocd-konn-jsonnet-plugin, init]
+      generate:
+        command: [/usr/local/bin/argocd-konn-jsonnet-plugin, generate]
+      parameters:
+        static:
+          - name: path
+            title: Jsonnet root path
+            tooltip: |
+              This is the path to the jsonnet directory relative to the source path that will act as the jsonnet root.
+              Typically this is set to the name of the environment. eg. ./staging
+              Defaults to './' unless otherwise specified.
+            string: "./"
+            required: false
+          - name: entrypoint
+            title: Jsonnet entrypoint
+            tooltip: |
+              The main jsonnet file to evaluate, Only one entrypoint is allowed, and it must be a jsonnet file. 
+              Defaults to './application.jsonnet' unless otherwise specified.
+            string: "./application.jsonnet"
+            required: false
+          - name: extVars
+            title: Jsonnet external variables
+            tooltip: |
+              External variables to pass to jsonnet. This is a list of key=value pairs passed as --ext-str.
+              The key must be a valid jsonnet variable name. eg. app=konn-jsonnet
+              Defaults to an empty list unless otherwise specified.
+            array: []
+            collectionType: array
+            required: false
+          - name: tlas
+            title: Jsonnet top level arguments
+            tooltip: |
+              Top level arguments to pass to jsonnet. This is a list of key=value pairs passed as --tla-str.
+              The key must be a valid jsonnet variable name. eg. ns=konn-jsonnet
+              Defaults to an empty list unless otherwise specified.
+            array: []
+            collectionType: array
+            required: false
+          - name: libs
+            title: Jsonnet libraries
+            tooltip: |
+              Specify a list of jsonnet libraries to include in the jsonnet library search dir passed as --jpath.
+              If a git repo is specified, it will be cloned and added to the jsonnet library search dir.
+              Git repos are matched by the name of the library. eg. starts with git@ or https://
+              Git repos library names match the name of the repo excluding the .git suffix.
+              Defaults to an empty list unless otherwise specified.
+            array: []
+            collectionType: array
+            required: false
+      preserveFileMode: false
+      provideGitCreds: true
