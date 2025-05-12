@@ -47,12 +47,12 @@ func (p *KonnJsonnetPlugin) Generate() error {
 
 	// external vars
 	for _, extStr := range p.ExtVars {
-		jsonnetArgs = append(jsonnetArgs, "--ext-str", extStr)
+		jsonnetArgs = append(jsonnetArgs, "--ext-str", os.ExpandEnv(extStr))
 	}
 
 	// top-level arguments
 	for _, tlasStr := range p.Tlas {
-		jsonnetArgs = append(jsonnetArgs, "--tla-str", tlasStr)
+		jsonnetArgs = append(jsonnetArgs, "--tla-str", os.ExpandEnv(tlasStr))
 	}
 
 	// file name is path + entrypoint
