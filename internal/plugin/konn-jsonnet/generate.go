@@ -67,7 +67,7 @@ func (p *KonnJsonnetPlugin) Generate() error {
 
 	err := cmd.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to run jsonnet with %s: %w", jsonnetArgs, err)
 	}
 
 	return nil

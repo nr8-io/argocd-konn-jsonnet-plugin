@@ -28,10 +28,10 @@ func (p *KonnJsonnetPlugin) Init() error {
 	}
 
 	// sync all repos
-	paths, err := sync.SyncRepos()
-	if err != nil {
+	paths, errs := sync.SyncRepos()
+	if len(errs) > 0 {
 		p.log.Error().Err(err).Msg("Failed to sync repos")
-		return err
+		return fmt.Errorf("failed to sync repos: %v", errs)
 	}
 
 	rev := argocd.AppRevisionShort()

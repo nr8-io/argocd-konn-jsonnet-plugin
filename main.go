@@ -42,6 +42,7 @@ func main() {
 		err := plugin.Init()
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to init plugin")
+			fmt.Printf("Failed to init plugin: %s\n", err)
 			os.Exit(1)
 		}
 		return
@@ -51,6 +52,7 @@ func main() {
 	if os.Args[1] == "generate" {
 		err := plugin.Generate()
 		if err != nil {
+			fmt.Printf("Failed to generate outputs: %s\n", err)
 			os.Exit(1)
 		}
 		return
