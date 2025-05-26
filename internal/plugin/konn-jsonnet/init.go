@@ -13,7 +13,7 @@ func (p *KonnJsonnetPlugin) Init() error {
 	gitRepos := []string{} // git repos
 	for _, lib := range p.Libs {
 		// if matches https:// or git@ then add to gitRepos
-		if len(lib) > 0 && (lib[:8] == "https://" || lib[:4] == "git@") {
+		if (len(lib) >= 8 && lib[:8] == "https://") || (len(lib) >= 4 && lib[:4] == "git@") {
 			gitRepos = append(gitRepos, lib)
 		}
 	}

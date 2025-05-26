@@ -128,7 +128,7 @@ func (g *GitSync) SyncRepo(repo string) (string, error) {
 				break
 			}
 
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(1000 * time.Millisecond)
 		}
 
 		g.log.Debug().Msgf("Lock file was removed: %s", repo)
