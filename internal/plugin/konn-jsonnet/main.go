@@ -14,11 +14,13 @@ type KonnJsonnetPlugin struct {
 	log *zerolog.Logger
 
 	// jsonnet parameters
-	Entrypoint string   `json:"entrypoint"`
-	Path       string   `json:"path"`
-	ExtVars    []string `json:"extVars"`
-	Tlas       []string `json:"tlas"`
-	Libs       []string `json:"libs"`
+	Entrypoint  string   `json:"entrypoint"`
+	Path        string   `json:"path"`
+	ExtVars     []string `json:"extVars"`
+	ExtVarsCode []string `json:"extVarsCode"`
+	Tlas        []string `json:"tlas"`
+	TlasCode    []string `json:"tlasCode"`
+	Libs        []string `json:"libs"`
 }
 
 func NewKonnJsonnetPlugin(options ...KonnJsonnetPluginOption) (*KonnJsonnetPlugin, error) {
@@ -59,19 +61,24 @@ func (p *KonnJsonnetPlugin) Configure(options ...KonnJsonnetPluginOption) error 
 
 	// set plugin options from argo app parameters
 	for _, param := range params {
-		if param.Name == "entrypoint" {
+		switch param.Name {
+		case "entrypoint":
 			p.Entrypoint = param.String
-		} else if param.Name == "path" {
+		case "path":
 			p.Path = param.String
-		}
-		if param.Name == "extVars" {
+		case "extVars":
 			p.ExtVars = param.Array
-		}
-		if param.Name == "tlas" {
+		case "extVarsCode":
+			p.ExtVarsCode = param.Array
+		case "tlas":
 			p.Tlas = param.Array
-		}
-		if param.Name == "libs" {
+		case "tlasCode":
+			p.TlasCode = param.Array
+		case "libs":
 			p.Libs = param.Array
+		default:
+			// ignore unknown parameters
+			continue
 		}
 	}
 

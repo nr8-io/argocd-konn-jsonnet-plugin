@@ -34,8 +34,17 @@ data:
           - name: extVars
             title: Jsonnet external variables
             tooltip: |
-              External variables to pass to jsonnet. This is a list of key=value pairs passed as --ext-str.
+              External variables as a string to pass to jsonnet. This is a list of key=value pairs passed as --ext-str.
               The key must be a valid jsonnet variable name. eg. app=konn-jsonnet
+              Defaults to an empty list unless otherwise specified.
+            array: []
+            collectionType: array
+            required: false
+          - name: extVarsCode
+            title: Jsonnet external variables as code
+            tooltip: |
+              External variables to pass to jsonnet. This is a list of key=value pairs passed as --ext-code.
+              The key must be a valid jsonnet variable nae. eg. app=konn-jsonnet
               Defaults to an empty list unless otherwise specified.
             array: []
             collectionType: array
@@ -43,7 +52,16 @@ data:
           - name: tlas
             title: Jsonnet top level arguments
             tooltip: |
-              Top level arguments to pass to jsonnet. This is a list of key=value pairs passed as --tla-str.
+              Top level arguments as a string to pass to jsonnet. This is a list of key=value pairs passed as --tla-str.
+              The key must be a valid jsonnet variable name. eg. ns=konn-jsonnet
+              Defaults to an empty list unless otherwise specified.
+            array: []
+            collectionType: array
+            required: false
+          - name: tlasCode
+            title: Jsonnet top level arguments as code
+            tooltip: |
+              Top level arguments as code to pass to jsonnet. This is a list of key=value pairs passed as --tla-code.
               The key must be a valid jsonnet variable name. eg. ns=konn-jsonnet
               Defaults to an empty list unless otherwise specified.
             array: []

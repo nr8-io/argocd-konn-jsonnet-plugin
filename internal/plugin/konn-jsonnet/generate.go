@@ -50,9 +50,17 @@ func (p *KonnJsonnetPlugin) Generate() error {
 		jsonnetArgs = append(jsonnetArgs, "--ext-str", os.ExpandEnv(extStr))
 	}
 
+	for _, extCode := range p.ExtVarsCode {
+		jsonnetArgs = append(jsonnetArgs, "--ext-code", os.ExpandEnv(extCode))
+	}
+
 	// top-level arguments
 	for _, tlasStr := range p.Tlas {
 		jsonnetArgs = append(jsonnetArgs, "--tla-str", os.ExpandEnv(tlasStr))
+	}
+
+	for _, tlasCode := range p.TlasCode {
+		jsonnetArgs = append(jsonnetArgs, "--tla-code", os.ExpandEnv(tlasCode))
 	}
 
 	// file name is path + entrypoint
