@@ -141,7 +141,7 @@ func (g *GitSync) SyncRepo(repo string) (string, error) {
 		g.log.Debug().Msgf("Repo does not exist, cloning: %s", repo)
 
 		// clone repo
-		cmd := exec.Command("git", "clone", "--depth=1", repo, repoDir)
+		cmd := exec.Command("git", "clone", repo, repoDir)
 		err := cmd.Run()
 		if err != nil {
 			g.log.Error().Err(err).Msg("Failed to clone repo")
@@ -150,15 +150,8 @@ func (g *GitSync) SyncRepo(repo string) (string, error) {
 	} else {
 		g.log.Debug().Msgf("Repo exists, pulling: %s", repo)
 
-		cmd := exec.Command("git", "-C", repoDir, "fetch", "--depth=1", "origin", "HEAD")
+		cmd := exec.Command("git", "-C", repoDir, "pull")
 		err := cmd.Run()
-		if err != nil {
-			g.log.Error().Err(err).Msg("Failed to fetch repo")
-			return "", fmt.Errorf("failed to fetch repo %s: %w", repo, err)
-		}
-
-		cmd = exec.Command("git", "-C", repoDir, "merge", "--ff-only", "origin", "HEAD")
-		err = cmd.Run()
 		if err != nil {
 			g.log.Error().Err(err).Msg("Failed to pull repo")
 			return "", fmt.Errorf("failed to pull repo %s: %w", repo, err)
