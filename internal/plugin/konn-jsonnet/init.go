@@ -65,6 +65,12 @@ func (p *KonnJsonnetPlugin) Init() error {
 
 		// create symlinks for each path
 		for _, path := range paths {
+			// skip if symlink already exists
+			if _, err := os.Lstat(filepath.Join(tmpDir, filepath.Base(path))); err == nil {
+				p.log.Warn().Msgf("Symlink for %s already exists, skipping...", path)
+				continue
+			}
+
 			p.log.Debug().Msgf("Creating symlink for %s", path)
 
 			err := os.Symlink(path, filepath.Join(tmpDir, filepath.Base(path)))
