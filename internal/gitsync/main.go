@@ -21,6 +21,11 @@ type GitSync struct {
 	RepoPath string
 }
 
+type GitSyncPath struct {
+	Name string
+	Path string
+}
+
 // Manage git repositories used in libs provided by the plugin
 func NewGitSync(repos []string, options ...GitSyncOption) (*GitSync, error) {
 	g := &GitSync{
@@ -61,17 +66,18 @@ func (g *GitSync) Configure(options ...GitSyncOption) error {
 	return nil
 }
 
-func (g *GitSync) SyncRepos() ([]string, []error) {
+func (g *GitSync) SyncRepos() ([]GitSyncPath, []error) {
 	g.log.Debug().Msg("Syncing repos")
 
 	wg := sync.WaitGroup{}
-	paths := make([]string, len(g.Repos))
+	paths := make([]GitSyncPath, len(g.Repos))
 
 	var errs []error
 	for i, repo := range g.Repos {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+
 			path, err := g.SyncRepo(repo)
 
 			if err != nil {
@@ -92,8 +98,11 @@ func (g *GitSync) SyncRepos() ([]string, []error) {
 	return paths, nil
 }
 
-func (g *GitSync) SyncRepo(repo string) (string, error) {
+func (g *GitSync) SyncRepo(repo string) (GitSyncPath, error) {
 	g.log.Debug().Msgf("Syncing repo: %s", repo)
+
+	// allows time for the lock file to be created by another process before we check for it
+	time.Sleep(1000 * time.Millisecond)
 
 	// check if repoPath exists
 	if _, err := os.Stat(g.RepoPath); os.IsNotExist(err) {
@@ -102,12 +111,26 @@ func (g *GitSync) SyncRepo(repo string) (string, error) {
 
 		if err != nil {
 			g.log.Error().Err(err).Msg("Failed to create repo path")
-			return "", fmt.Errorf("failed to create repo path: %w", err)
+			return GitSyncPath{}, fmt.Errorf("failed to create repo path: %w", err)
 		}
 	}
 
-	repoName := strings.TrimSuffix(filepath.Base(repo), ".git")
-	repoDir := filepath.Join(g.RepoPath, repoName)
+	// trim any trailing .git from the repo name and use that as the directory name
+	repoName := repo
+	repoBranchTagOrCommit := "HEAD"
+
+	if strings.Contains(repo, "#") {
+		parts := strings.Split(repo, "#")
+		repo = parts[0]
+		repoBranchTagOrCommit = parts[1]
+	}
+
+	if strings.Contains(repo, ".git") {
+		repoName = repo[:strings.LastIndex(repo, ".git")]
+	}
+
+	repoName = filepath.Base(repoName)
+	repoDir := filepath.Join(g.RepoPath, repoName+"_"+strings.ReplaceAll(repoBranchTagOrCommit, "/", "_"))
 
 	// create a lock file to prevent concurrent access
 	lockFile := repoDir + ".lock"
@@ -115,11 +138,11 @@ func (g *GitSync) SyncRepo(repo string) (string, error) {
 		err = os.WriteFile(lockFile, []byte{}, os.ModePerm)
 		if err != nil {
 			g.log.Error().Err(err).Msg("Failed to create lock file")
-			return "", fmt.Errorf("failed to create lock file: %w", err)
+			return GitSyncPath{}, fmt.Errorf("failed to create lock file: %w", err)
 		}
 		defer os.Remove(lockFile)
 	} else {
-		g.log.Debug().Msgf("Lock file exists: %s", repo)
+		g.log.Debug().Msgf("Lock file exists, repo already being synced: %s", repo)
 
 		// wait for lock file to be removed
 		for {
@@ -128,12 +151,13 @@ func (g *GitSync) SyncRepo(repo string) (string, error) {
 				break
 			}
 
+			// check back every second to see if the lock file has been removed
 			time.Sleep(1000 * time.Millisecond)
 		}
 
 		g.log.Debug().Msgf("Lock file was removed: %s", repo)
 
-		return repoDir, nil
+		return GitSyncPath{Name: repoName, Path: repoDir}, nil
 	}
 
 	_, dirErr := os.Stat(repoDir)
@@ -144,35 +168,26 @@ func (g *GitSync) SyncRepo(repo string) (string, error) {
 		cmd := exec.Command("git", "clone", "--depth=1", repo, repoDir)
 		err := cmd.Run()
 		if err != nil {
-			g.log.Error().Err(err).Msg("Failed to clone repo")
-			return "", fmt.Errorf("failed to clone repo %s: %w", repo, err)
-		}
-	} else {
-		g.log.Debug().Msgf("Repo exists, pulling: %s", repo)
-
-		cmd := exec.Command("git", "-C", repoDir, "fetch", "--depth=1", "origin", "HEAD")
-		err := cmd.Run()
-		if err != nil {
-			g.log.Error().Err(err).Msg("Failed to fetch repo")
-			return "", fmt.Errorf("failed to fetch repo %s: %w", repo, err)
-		}
-
-		cmd = exec.Command("git", "-C", repoDir, "reset", "--hard", "origin/HEAD")
-		err = cmd.Run()
-		if err != nil {
-			g.log.Error().Err(err).Msg("Failed to pull repo")
-			return "", fmt.Errorf("failed to pull repo %s: %w", repo, err)
+			g.log.Error().Err(err).Msgf("Failed to clone repo: %s", repo)
+			return GitSyncPath{}, fmt.Errorf("failed to clone repo %s: %w", repo, err)
 		}
 	}
 
-	g.log.Debug().Msgf("Repo exists, checking out latest commit: %s", repo)
+	g.log.Debug().Msgf("Repo exists, fetching updates: %s %s", repo, repoBranchTagOrCommit)
 
-	cmd := exec.Command("git", "-C", repoDir, "checkout", "HEAD")
+	cmd := exec.Command("git", "-C", repoDir, "fetch", "--depth=1", "origin", repoBranchTagOrCommit)
 	err := cmd.Run()
 	if err != nil {
-		g.log.Error().Err(err).Msg("Failed to checkout repo")
-		return "", fmt.Errorf("failed to checkout repo %s: %w", repo, err)
+		g.log.Error().Err(err).Msgf("Failed to fetch repo: %s", repo)
+		return GitSyncPath{}, fmt.Errorf("failed to fetch repo %s: %w", repo, err)
 	}
 
-	return repoDir, nil
+	cmd = exec.Command("git", "-C", repoDir, "reset", "--hard", "FETCH_HEAD")
+	err = cmd.Run()
+	if err != nil {
+		g.log.Error().Err(err).Msgf("Failed to reset repo: %s", repo)
+		return GitSyncPath{}, fmt.Errorf("failed to reset repo %s: %w", repo, err)
+	}
+
+	return GitSyncPath{Name: repoName, Path: repoDir}, nil
 }

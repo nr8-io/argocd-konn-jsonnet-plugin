@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/nr8-io/argocd-konn-jsonnet-plugin/internal/argocd"
+	"github.com/nr8-io/argocd-konn-jsonnet-plugin/internal/gitsync"
 )
 
 func (p *KonnJsonnetPlugin) Generate() error {
@@ -34,6 +35,18 @@ func (p *KonnJsonnetPlugin) Generate() error {
 	}
 
 	if len(gitRepos) > 0 {
+		sync, err := gitsync.NewGitSync(gitRepos, gitsync.WithLogger(p.log))
+		if err != nil {
+			p.log.Error().Err(err).Msg("Failed to create git sync manager")
+			return err
+		}
+
+		_, errs := sync.SyncRepos()
+		if len(errs) > 0 {
+			p.log.Error().Err(err).Msg("Failed to sync repos")
+			return fmt.Errorf("failed to sync repos: %v", errs)
+		}
+
 		rev := argocd.AppRevisionShort()
 		if rev == "" {
 			p.log.Error().Msg("ARGOCD_APP_REVISION_SHORT is not set")
