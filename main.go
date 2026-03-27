@@ -6,6 +6,7 @@ import (
 
 	kj "github.com/nr8-io/argocd-konn-jsonnet-plugin/internal/plugin/konn-jsonnet"
 	"github.com/nr8-io/argocd-konn-jsonnet-plugin/pkg/zino"
+	"github.com/rs/zerolog"
 )
 
 func main() {
@@ -50,6 +51,9 @@ func main() {
 
 	// generate argocd manifest
 	if os.Args[1] == "generate" {
+		// disable all logging during generate to prevent log output from interfering with manifest output
+		zerolog.SetGlobalLevel(zerolog.Disabled)
+
 		err := plugin.Generate()
 		if err != nil {
 			fmt.Printf("Failed to generate outputs: %s\n", err)
