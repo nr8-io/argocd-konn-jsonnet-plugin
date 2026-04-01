@@ -111,6 +111,8 @@ func (g *GitSync) SyncRepo(repo string) (GitSyncPath, error) {
 
 		if err != nil {
 			g.log.Error().Err(err).Msg("Failed to create repo path")
+
+			// Hard fail since we can't create the repo path, so there's no existing repo to fall back to.
 			return GitSyncPath{}, fmt.Errorf("failed to create repo path: %w", err)
 		}
 	}
@@ -157,6 +159,8 @@ func (g *GitSync) SyncRepo(repo string) (GitSyncPath, error) {
 
 		g.log.Debug().Msgf("Lock file was removed: %s", repo)
 
+		// return the existing repo path even if we didn't sync it, since another process
+		// is already syncing it and we don't want to cause a conflict by trying to sync it again.
 		return GitSyncPath{Name: repoName, Path: repoDir}, nil
 	}
 
@@ -169,6 +173,8 @@ func (g *GitSync) SyncRepo(repo string) (GitSyncPath, error) {
 		err := cmd.Run()
 		if err != nil {
 			g.log.Error().Err(err).Msgf("Failed to clone repo: %s", repo)
+
+			// Hard fail since the repo doesn't exist and we can't clone it, so there's no existing repo to fall back to.
 			return GitSyncPath{}, fmt.Errorf("failed to clone repo %s: %w", repo, err)
 		}
 	}
@@ -179,14 +185,20 @@ func (g *GitSync) SyncRepo(repo string) (GitSyncPath, error) {
 	err := cmd.Run()
 	if err != nil {
 		g.log.Error().Err(err).Msgf("Failed to fetch repo: %s", repo)
-		return GitSyncPath{}, fmt.Errorf("failed to fetch repo %s: %w", repo, err)
+
+		// return anyway so the plugin can use the existing repo, even if it's not up to date.
+		// This is a best effort to avoid complete failure of the plugin if there are issues with the git repo.
+		return GitSyncPath{Name: repoName, Path: repoDir}, nil
 	}
 
 	cmd = exec.Command("git", "-C", repoDir, "reset", "--hard", "FETCH_HEAD")
 	err = cmd.Run()
 	if err != nil {
 		g.log.Error().Err(err).Msgf("Failed to reset repo: %s", repo)
-		return GitSyncPath{}, fmt.Errorf("failed to reset repo %s: %w", repo, err)
+
+		// Same as above, return anyway so the plugin can use the existing repo, even if it's not up to date.
+		// Prevents an outage of the git repo from causing a complete failure of the plugin.
+		return GitSyncPath{Name: repoName, Path: repoDir}, nil
 	}
 
 	return GitSyncPath{Name: repoName, Path: repoDir}, nil
